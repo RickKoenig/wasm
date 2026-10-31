@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Test clang</title>
+  </head>
+  <body>
+		<p>Go back to <a href="../../index.html#webasm"> The Main page.</a></p>
+    <div class="container">
+      <h2>Test clang</h2>
+      <div class="container" style="width:  80%">
+        <span id = "xval">xval = foo</span>
+        <br>
+        <input type="range" id="xvalSlider" name="xval"/>
+        <br>
+        <br>
+
+        <span id = "yval">yval = bar</span>
+        <br>
+
+        <input type="range" id="yvalSlider" name="yval"/>
+        <br><br>
+        
+        <div>Result: <span id="result"></span></div>
+      </div>    
+    </div>
+    <script src="dist2.js"></script> <!-- emscripten -->
+    <script src="dist2test.js"></script> <!-- user -->
+  </body>
+</html>

@@ -1,0 +1,29 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "chrome",
+            "request": "launch",
+            "name": "Launch Chrome against localhost, hey",
+            "url": "http://localhost:88/webasm/wat2wasm/hey.html",
+            "webRoot": "${workspaceFolder}"
+        },
+        {
+            "type": "chrome",
+            "request": "launch",
+            "name": "Launch Chrome against localhost, fib",
+            "url": "http://localhost:88/webasm/wat2wasm/fib.html",
+            "webRoot": "${workspaceFolder}"
+        },
+        {
+            "type": "chrome",
+            "request": "launch",
+            "name": "Launch Chrome against localhost, strings",
+            "url": "http://localhost:88/webasm/wat2wasm/strings.html",
+            "webRoot": "${workspaceFolder}"
+        },
+    ]
+}
