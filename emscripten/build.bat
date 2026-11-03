@@ -1,17 +1,20 @@
-goto skip1
+cls
+
+rem goto skip1
 rem scratch
 clang scratch.cpp deg2rad.cpp -std=c++20 -o scratch.exe
 em++ scratch.cpp deg2rad.cpp -std=c++20 -o scratch.html
 
 :skip1
 rem sdltest
-clang sdlTest.c -o sdlTest.exe
+clang sdlTest.c -IC:\SDL3\include -LC:\sdl3\lib\x64 -lSDL3.lib -o sdlTest.exe
+rem emcc sdlTest.c --use-port=sdl3 -o sdlTest.html
 emcc sdlTest.c -o sdlTest.html
 
-goto skip2
+rem goto skip2
 rem files
 clang files.cpp -o files.exe
-em++ files.cpp -o files.html --preload-file fileData/hello_world_file.txt
+rem em++ files.cpp -o files.html --preload-file fileData/hello_world_file.txt
 
 rem hello
 clang hello.c -o hello.exe
