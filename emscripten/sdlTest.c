@@ -44,16 +44,33 @@ double deg2rad(double deg) {
     return deg * M_PI / 180.0;
 }
 
+/*#ifdef __EMSCRIPTEN__
 void rect(int x, int y, int sx, int sy, int r, int g, int b, int a) {
   // center
   x -= sx / 2;
   y -= sy / 2;
   for (int oy = y; oy < y + sy; ++oy) {
     for (int ox = x; ox < x + sx; ++ox) {
-      //*((Uint32*)surface->pixels + oy * 256 + ox) = SDL_MapRGBA(surface->format, r, g, b, a);//j, 255-i, alpha);  
+      *((Uint32*)surface->pixels + oy * 256 + ox) = SDL_MapRGBA(surface->format, r, g, b, a);//j, 255-i, alpha);  
     }
   }
 }
+#else*/
+void rect(int x, int y, int sx, int sy, int r, int g, int b, int a) {
+  //const SDL_PixelFormatDetails* fmtDetails = SDL_GetPixelFormatDetails(surface->format);
+  //*((Uint32*)surface->pixels + j * 256 + i) = SDL_MapRGB(fmtDetails, NULL, i, j, 0);//j, 255-i, alpha);
+  // center
+  x -= sx / 2;
+  y -= sy / 2;
+  Uint32 color = (r << 16) | (g << 8) | (b << 0) | (a << 24);
+  for (int oy = y; oy < y + sy; ++oy) {
+    for (int ox = x; ox < x + sx; ++ox) {
+      *((Uint32*)surface->pixels + oy * 256 + ox) = color;
+    }
+  }
+}
+//#endif
+
 #ifdef __EMSCRIPTEN__
 bool one_iter(double time, void* userData) {
   //printf("in one iter deg = %d\n", deg);
@@ -145,8 +162,10 @@ bool one_iter(double time, void* userData) {
       // data (and testing that it does get discarded)
       int alpha = (i+j) % 255;
 #endif
-      const SDL_PixelFormatDetails* fmtDetails = SDL_GetPixelFormatDetails(surface->format);
-      *((Uint32*)surface->pixels + j * 256 + i) = SDL_MapRGB(fmtDetails, NULL, i, j, 0);//j, 255-i, alpha);
+      //Uint32 color = SDL_MapSurfaceRGB(surface, i, j, 0);
+      Uint32 color = (i << 16) | (j << 8) | (0 << 0) | 0xFF000000;
+      //const SDL_PixelFormatDetails* fmtDetails = SDL_GetPixelFormatDetails(surface->format);
+      *((Uint32*)surface->pixels + j * 256 + i) = color;//SDL_MapRGB(fmtDetails, NULL, i, j, 0);//j, 255-i, alpha);
     }
   }
   
@@ -177,7 +196,7 @@ int main(int argc, char** argv) {
   result = SDL_Init(SDL_INIT_VIDEO);
   printf("SDL result value init video %d\n", result);
   // surface = SDL_SetVideoMode(256, 256, 32, SDL_SWSURFACE);
-  window = SDL_CreateWindow("My Game", 256, 256, 0);
+  window = SDL_CreateWindow("SDL test 2D", 256, 256, 0);
   surface = SDL_GetWindowSurface(window);
   //int color = 255;
 // Get the surface's pixel format details
