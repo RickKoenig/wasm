@@ -56,29 +56,30 @@ void rect(int x, int y, int sx, int sy, int r, int g, int b, int a) {
   }
 }
 #else*/
-void rect(int x, int y, int sx, int sy, int r, int g, int b, int a) {
+void rect(int x, int y, int sx, int sy, Uint32 color) {
   //const SDL_PixelFormatDetails* fmtDetails = SDL_GetPixelFormatDetails(surface->format);
   //*((Uint32*)surface->pixels + j * 256 + i) = SDL_MapRGB(fmtDetails, NULL, i, j, 0);//j, 255-i, alpha);
   // center
   x -= sx / 2;
   y -= sy / 2;
-  Uint32 color = (r << 16) | (g << 8) | (b << 0) | (a << 24);
   for (int oy = y; oy < y + sy; ++oy) {
     for (int ox = x; ox < x + sx; ++ox) {
       *((Uint32*)surface->pixels + oy * 256 + ox) = color;
     }
   }
 }
+//  Uint32 color = (r << 16) | (g << 8) | (b << 0) | (a << 24);
 //#endif
 
 #ifdef __EMSCRIPTEN__
 bool one_iter(double time, void* userData) {
-  //printf("in one iter deg = %d\n", deg);
+  printf("in one iter deg = %d\n", deg);
+  const SDL_PixelFormat* fmtDetails = surface->format;
   if (SDL_MUSTLOCK(surface)) SDL_LockSurface(surface);
   float rad = deg2rad(deg);
   int rx = 96 * cos(rad);
   int ry = 96 * sin(rad);
-  for (int j = 0; j < 256; j++) {
+  for (int j = 0; j < 128; j++) {
     for (int i = 0; i < 256; i++) {
 #ifdef TEST_SDL_LOCK_OPTS
       // Alpha behaves like in the browser, so write proper opaque pixels.
@@ -91,10 +92,10 @@ bool one_iter(double time, void* userData) {
       *((Uint32*)surface->pixels + j * 256 + i) = SDL_MapRGBA(surface->format, i, j, 0, 0);//j, 255-i, alpha);
     }
   }
-  rect(128 + rx, 128 + ry,   20, 20,   0, 0, 255, 255); // circle
-  rect(128 + rx, 10,   20, 20,   255, 0, 0, 255); // horz 
-  rect(10, 128 + ry,   20, 20,   0, 255, 0, 255); // vert
-  rect(scan, 64,   20, 20,   255, 255, 255, 255); // fps scan
+  rect(128 + rx, 128 + ry,   20, 20, SDL_MapRGB(fmtDetails, 255, 0, 0)); // circle
+  rect(128 + rx, 10,   20, 20, SDL_MapRGB(fmtDetails, 0, 255, 0)); // horz 
+  rect(10, 128 + ry,   20, 20, SDL_MapRGB(fmtDetails, 0, 0, 255)); // vert
+  rect(scan, 64,   20, 20, SDL_MapRGB(fmtDetails, 255, 255, 255)); // fps scan
   if (SDL_MUSTLOCK(surface)) SDL_UnlockSurface(surface);
   SDL_Flip(surface);
   ++deg;
@@ -147,12 +148,15 @@ int main(int argc, char** argv) {
 
 bool one_iter(double time, void* userData) {
   printf("in one iter deg = %d\n", deg);
-  if (SDL_MUSTLOCK(surface)) SDL_LockSurface(surface);
+  // Get the surface's pixel format details
+  const SDL_PixelFormatDetails* fmtDetails = SDL_GetPixelFormatDetails(surface->format);
+  int clearColor = SDL_MapRGB(fmtDetails, NULL, 255, 255, 0);
+  SDL_FillSurfaceRect(surface, NULL, clearColor);
   
   float rad = deg2rad(deg);
   int rx = 96 * cos(rad);
   int ry = 96 * sin(rad);
-  for (int j = 0; j < 256; j++) {
+  for (int j = 0; j < 128; j++) {
     for (int i = 0; i < 256; i++) {
 #ifdef TEST_SDL_LOCK_OPTS
       // Alpha behaves like in the browser, so write proper opaque pixels.
@@ -163,16 +167,15 @@ bool one_iter(double time, void* userData) {
       int alpha = (i+j) % 255;
 #endif
       //Uint32 color = SDL_MapSurfaceRGB(surface, i, j, 0);
-      Uint32 color = (i << 16) | (j << 8) | (0 << 0) | 0xFF000000;
-      //const SDL_PixelFormatDetails* fmtDetails = SDL_GetPixelFormatDetails(surface->format);
-      *((Uint32*)surface->pixels + j * 256 + i) = color;//SDL_MapRGB(fmtDetails, NULL, i, j, 0);//j, 255-i, alpha);
+      //Uint32 color = (i << 16) | (j << 8) | (0 << 0) | 0xFF000000;
+      *((Uint32*)surface->pixels + j * 256 + i) = SDL_MapRGB(fmtDetails, NULL, i, j, 0);//j, 255-i, alpha);
     }
   }
   
-  rect(128 + rx, 128 + ry,   20, 20,   0, 0, 255, 255); // circle
-  rect(128 + rx, 10,   20, 20,   255, 0, 0, 255); // horz 
-  rect(10, 128 + ry,   20, 20,   0, 255, 0, 255); // vert
-  rect(scan, 64,   20, 20,   255, 255, 255, 255); // fps scan
+  rect(128 + rx, 128 + ry,   20, 20, SDL_MapRGB(fmtDetails, NULL, 255, 0, 0)); // circle
+  rect(128 + rx, 10,   20, 20, SDL_MapRGB(fmtDetails, NULL, 0, 255, 0)); // horz 
+  rect(10, 128 + ry,   20, 20, SDL_MapRGB(fmtDetails, NULL, 0, 0, 255)); // vert
+  rect(scan, 64,   20, 20, SDL_MapRGB(fmtDetails, NULL, 255, 255, 255)); // fps scan
   if (SDL_MUSTLOCK(surface)) SDL_UnlockSurface(surface);
   //SDL_Flip(surface);
   ++deg;
@@ -199,10 +202,6 @@ int main(int argc, char** argv) {
   window = SDL_CreateWindow("SDL test 2D", 256, 256, 0);
   surface = SDL_GetWindowSurface(window);
   //int color = 255;
-// Get the surface's pixel format details
-const SDL_PixelFormatDetails* fmtDetails = SDL_GetPixelFormatDetails(surface->format);
-  int color = SDL_MapRGB(fmtDetails, NULL, 255, 255, 0);
-  SDL_FillSurfaceRect(surface, NULL, color);
   // 3. Update the window to make the surface changes visible
 /*
 
@@ -210,7 +209,8 @@ const SDL_PixelFormatDetails* fmtDetails = SDL_GetPixelFormatDetails(surface->fo
   EM_ASM("SDL.defaults.copyOnLock = false; SDL.defaults.discardOnLock = true; SDL.defaults.opaqueFrontBuffer = false;");
 #endif
 */
-#ifdef ANIMATE
+//#ifdef ANIMATE
+#if 0
   emscripten_request_animation_frame_loop(&one_iter, 0);
 #else
   one_iter(0, NULL);

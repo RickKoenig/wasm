@@ -2954,6 +2954,12 @@ var _proc_exit = (code) => {
     };
 
 
+  var _SDL_MapRGB = (fmt, r, g, b) => {
+      SDL.checkPixelFormat(fmt);
+      // We assume the machine is little-endian.
+      return r&0xff|(g&0xff)<<8|(b&0xff)<<16|0xff000000;
+    };
+
   var _SDL_MapRGBA = (fmt, r, g, b, a) => {
       SDL.checkPixelFormat(fmt);
       // We assume the machine is little-endian.
@@ -4141,6 +4147,8 @@ var wasmImports = {
   SDL_Init: _SDL_Init,
   /** @export */
   SDL_LockSurface: _SDL_LockSurface,
+  /** @export */
+  SDL_MapRGB: _SDL_MapRGB,
   /** @export */
   SDL_MapRGBA: _SDL_MapRGBA,
   /** @export */
