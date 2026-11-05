@@ -1,25 +1,28 @@
-// Copyright 2011 The Emscripten Authors.  All rights reserved.
-// Emscripten is available under two separate licenses, the MIT license and the
-// University of Illinois/NCSA Open Source License.  Both these licenses can be
-// found in the LICENSE file.
 #include <stdio.h>
 #include <time.h>
 
 #ifdef __EMSCRIPTEN__
 #include <SDL/SDL.h>
-#else
-#include <SDL3/SDL.h>
-#endif
-
-#ifdef __EMSCRIPTEN__
 #include <emscripten.h>
 #include <emscripten/html5.h>
+#else
+#include <SDL3/SDL.h>
 #endif
 
 //#define ANIMATE
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
 #endif
+
+// object state
+static int deg;
+static int scan;
+
+// surface and misc
+static SDL_Surface *surface;
+#ifndef __EMSCRIPTEN__  // NATIVE
+SDL_Window* window;
+long busySecs = 5; // how long to busy wait on this window, showing graphics, then exit // MINIMAL
 
 void busySleep(long ms) {
     clock_t start = clock();
@@ -30,35 +33,13 @@ void busySleep(long ms) {
         break;
     }
 }
-
-static int deg;
-static int scan;
-
-static SDL_Surface *surface;
-
-#ifndef __EMSCRIPTEN__
-SDL_Window* window;
 #endif
 
 double deg2rad(double deg) {
     return deg * M_PI / 180.0;
 }
 
-/*#ifdef __EMSCRIPTEN__
-void rect(int x, int y, int sx, int sy, int r, int g, int b, int a) {
-  // center
-  x -= sx / 2;
-  y -= sy / 2;
-  for (int oy = y; oy < y + sy; ++oy) {
-    for (int ox = x; ox < x + sx; ++ox) {
-      *((Uint32*)surface->pixels + oy * 256 + ox) = SDL_MapRGBA(surface->format, r, g, b, a);//j, 255-i, alpha);  
-    }
-  }
-}
-#else*/
 void rect(int x, int y, int sx, int sy, Uint32 color) {
-  //const SDL_PixelFormatDetails* fmtDetails = SDL_GetPixelFormatDetails(surface->format);
-  //*((Uint32*)surface->pixels + j * 256 + i) = SDL_MapRGB(fmtDetails, NULL, i, j, 0);//j, 255-i, alpha);
   // center
   x -= sx / 2;
   y -= sy / 2;
@@ -68,41 +49,71 @@ void rect(int x, int y, int sx, int sy, Uint32 color) {
     }
   }
 }
-//  Uint32 color = (r << 16) | (g << 8) | (b << 0) | (a << 24);
-//#endif
 
+// unified mapRGB between SDL versions 1 and 3
 #ifdef __EMSCRIPTEN__
+Uint32 mapRGB(const SDL_PixelFormat* fmtDetails, Uint8 r, Uint8 g, Uint8 b) {
+ Uint32 color = SDL_MapRGB(fmtDetails, r, g, b);
+ return color;
+}
+#else
+Uint32 mapRGB(const SDL_PixelFormatDetails* fmtDetails, Uint8 r, Uint8 g, Uint8 b) {
+  Uint32 color = SDL_MapRGB(fmtDetails, NULL, r, g, b);
+  return color;
+}
+#endif
+
+// draw one frame
 bool one_iter(double time, void* userData) {
-  printf("in one iter deg = %d\n", deg);
+  //printf("in one iter deg = %d\n", deg);
+
+// clear surface
+#ifdef __EMSCRIPTEN__
   const SDL_PixelFormat* fmtDetails = surface->format;
+  Uint32 clearColor = SDL_MapRGB(fmtDetails, 255, 255, 0);
+  SDL_FillRect(surface, NULL, clearColor);
+#else
+  // Get the surface's pixel format details
+  const SDL_PixelFormatDetails* fmtDetails = SDL_GetPixelFormatDetails(surface->format);
+  int clearColor = SDL_MapRGB(fmtDetails, NULL, 255, 255, 0);
+  SDL_FillSurfaceRect(surface, NULL, clearColor);
+#endif
+
+// lock surface and draw color gradient pixels
   if (SDL_MUSTLOCK(surface)) SDL_LockSurface(surface);
   float rad = deg2rad(deg);
   int rx = 96 * cos(rad);
   int ry = 96 * sin(rad);
   for (int j = 0; j < 128; j++) {
     for (int i = 0; i < 256; i++) {
-#ifdef TEST_SDL_LOCK_OPTS
-      // Alpha behaves like in the browser, so write proper opaque pixels.
-      int alpha = 255;
+/*#ifdef __EMSCRIPTEN__
+      *((Uint32*)surface->pixels + j * 256 + i) = SDL_MapRGB(fmtDetails, i, j, 0);
 #else
-      // To emulate native behavior with blitting to surface, alpha component is ignored. Test that it is so by outputting
-      // data (and testing that it does get discarded)
-      int alpha = (i+j) % 255;
-#endif
-      *((Uint32*)surface->pixels + j * 256 + i) = SDL_MapRGBA(surface->format, i, j, 0, 0);//j, 255-i, alpha);
+      *((Uint32*)surface->pixels + j * 256 + i) = SDL_MapRGB(fmtDetails, NULL, i, j, 0);
+#endif*/
+      *((Uint32*)surface->pixels + j * 256 + i) = mapRGB(fmtDetails, i, j, 0);
     }
   }
-  rect(128 + rx, 128 + ry,   20, 20, SDL_MapRGB(fmtDetails, 255, 0, 0)); // circle
-  rect(128 + rx, 10,   20, 20, SDL_MapRGB(fmtDetails, 0, 255, 0)); // horz 
-  rect(10, 128 + ry,   20, 20, SDL_MapRGB(fmtDetails, 0, 0, 255)); // vert
-  rect(scan, 64,   20, 20, SDL_MapRGB(fmtDetails, 255, 255, 255)); // fps scan
+
+// draw simple objects
+  rect(128 + rx, 128 + ry,   20, 20, mapRGB(fmtDetails, 255, 0, 0)); // circle
+  rect(128 + rx, 10,   20, 20, mapRGB(fmtDetails, 0, 255, 0)); // horz 
+  rect(10, 128 + ry,   20, 20, mapRGB(fmtDetails, 0, 0, 255)); // vert
+  rect(scan, 64,   20, 20, mapRGB(fmtDetails, 255, 255, 255)); // fps scan
+
+// unlock and flip surface
   if (SDL_MUSTLOCK(surface)) SDL_UnlockSurface(surface);
+#ifdef __EMSCRIPTEN__
   SDL_Flip(surface);
-  ++deg;
+#else
+  SDL_UpdateWindowSurface(window);
+#endif
+
+// update objects state
+  deg += 6; // 6 * 60 = 360, try for 60 FPS, one revolution per second
   if (deg >= 360) {
     deg -= 360;
   }
-  
   ++scan;
   if (scan >= 256) {
     scan -= 256;
@@ -111,119 +122,127 @@ bool one_iter(double time, void* userData) {
 }
 
 int main(int argc, char** argv) {
-  printf("Hello, world!\n");
-
-  SDL_version compiled;
-  SDL_version linked;
-
-  SDL_VERSION(&compiled);       // Get version compiled against (Macro)
-  //SDL_GetVersion(&linked);      // Get current running version (Function)
-  printf("SDL version compiled = %d.%d\n", compiled.major, compiled.minor);
-  //printf("SDL version linked = %d.%d\n", linked.major, linked.minor);
-
-
-  SDL_Init(SDL_INIT_VIDEO);
-  surface = SDL_SetVideoMode(256, 256, 32, SDL_SWSURFACE);
-
-#ifdef TEST_SDL_LOCK_OPTS
-  EM_ASM("SDL.defaults.copyOnLock = false; SDL.defaults.discardOnLock = true; SDL.defaults.opaqueFrontBuffer = false;");
+// intro
+#ifdef __EMSCRIPTEN__
+  printf("Hello, world! EMSCRIPTEN\n");
+#else
+  printf("Hello, world! NATIVE\n");
 #endif
 
+// version
+#ifdef __EMSCRIPTEN__
+  SDL_version compiled;
+  SDL_VERSION(&compiled);       // Get version compiled against (Macro)
+  printf("SDL version compiled = %d.%d\n", compiled.major, compiled.minor);
+  //SDL_version linked;
+  //SDL_GetVersion(&linked);      // Get current running version (Function)
+  //printf("SDL version linked = %d.%d\n", linked.major, linked.minor);
+#else
+  printf("SDL version compiled = %d.%d\n", SDL_MAJOR_VERSION, SDL_MINOR_VERSION);
+#endif
+
+// init video
+#ifdef __EMSCRIPTEN__
+  SDL_Init(SDL_INIT_VIDEO);
+  surface = SDL_SetVideoMode(256, 256, 32, SDL_SWSURFACE);
+#else
+  bool result = SDL_Init(SDL_INIT_VIDEO);
+  printf("SDL result value init video %d\n", result);
+  window = SDL_CreateWindow("SDL test 2D", 256, 256, 0);
+  surface = SDL_GetWindowSurface(window);
+#endif
+
+// draw
+#ifdef __EMSCRIPTEN__
 #ifdef ANIMATE
   emscripten_request_animation_frame_loop(&one_iter, 0);
 #else
   one_iter(0, NULL);
 #endif
-
-
-  printf("you should see a smoothly-colored square - no sharp lines but the square borders!\n");
-  printf("and here is some text that should be HTML-friendly: amp: |&| double-quote: |\"| quote: |'| less-than, greater-than, html-like tags: |<cheez></cheez>|\nanother line.\n");
-
-  SDL_Quit();
-
-  return 0;
-}
-
-#else // NATIVE
-
-bool one_iter(double time, void* userData) {
-  printf("in one iter deg = %d\n", deg);
-  // Get the surface's pixel format details
-  const SDL_PixelFormatDetails* fmtDetails = SDL_GetPixelFormatDetails(surface->format);
-  int clearColor = SDL_MapRGB(fmtDetails, NULL, 255, 255, 0);
-  SDL_FillSurfaceRect(surface, NULL, clearColor);
-  
-  float rad = deg2rad(deg);
-  int rx = 96 * cos(rad);
-  int ry = 96 * sin(rad);
-  for (int j = 0; j < 128; j++) {
-    for (int i = 0; i < 256; i++) {
-#ifdef TEST_SDL_LOCK_OPTS
-      // Alpha behaves like in the browser, so write proper opaque pixels.
-      int alpha = 255;
 #else
-      // To emulate native behavior with blitting to surface, alpha component is ignored. Test that it is so by outputting
-      // data (and testing that it does get discarded)
-      int alpha = (i+j) % 255;
-#endif
-      //Uint32 color = SDL_MapSurfaceRGB(surface, i, j, 0);
-      //Uint32 color = (i << 16) | (j << 8) | (0 << 0) | 0xFF000000;
-      *((Uint32*)surface->pixels + j * 256 + i) = SDL_MapRGB(fmtDetails, NULL, i, j, 0);//j, 255-i, alpha);
-    }
-  }
-  
-  rect(128 + rx, 128 + ry,   20, 20, SDL_MapRGB(fmtDetails, NULL, 255, 0, 0)); // circle
-  rect(128 + rx, 10,   20, 20, SDL_MapRGB(fmtDetails, NULL, 0, 255, 0)); // horz 
-  rect(10, 128 + ry,   20, 20, SDL_MapRGB(fmtDetails, NULL, 0, 0, 255)); // vert
-  rect(scan, 64,   20, 20, SDL_MapRGB(fmtDetails, NULL, 255, 255, 255)); // fps scan
-  if (SDL_MUSTLOCK(surface)) SDL_UnlockSurface(surface);
-  //SDL_Flip(surface);
-  ++deg;
-  if (deg >= 360) {
-    deg -= 360;
-  }
-  
-  ++scan;
-  if (scan >= 256) {
-    scan -= 256;
-  }
-  SDL_UpdateWindowSurface(window);
-  return true;
-}
-
-int main(int argc, char** argv) {
-  printf("Hello, world! NATIVE\n");
-  printf("SDL version compiled = %d.%d\n", SDL_MAJOR_VERSION, SDL_MINOR_VERSION);
-
-  bool result = false;
-  result = SDL_Init(SDL_INIT_VIDEO);
-  printf("SDL result value init video %d\n", result);
-  // surface = SDL_SetVideoMode(256, 256, 32, SDL_SWSURFACE);
-  window = SDL_CreateWindow("SDL test 2D", 256, 256, 0);
-  surface = SDL_GetWindowSurface(window);
-  //int color = 255;
-  // 3. Update the window to make the surface changes visible
-/*
-
-#ifdef TEST_SDL_LOCK_OPTS
-  EM_ASM("SDL.defaults.copyOnLock = false; SDL.defaults.discardOnLock = true; SDL.defaults.opaqueFrontBuffer = false;");
-#endif
-*/
-//#ifdef ANIMATE
-#if 0
+#ifdef NO //ANIMATE
   emscripten_request_animation_frame_loop(&one_iter, 0);
 #else
   one_iter(0, NULL);
 #endif
+#endif
 
-
+// exit
+#ifndef __EMSCRIPTEN__
+  busySleep(busySecs * 1000); // ms/sec
+#endif
   printf("you should see a smoothly-colored square - no sharp lines but the square borders!\n");
   printf("and here is some text that should be HTML-friendly: amp: |&| double-quote: |\"| quote: |'| less-than, greater-than, html-like tags: |<cheez></cheez>|\nanother line.\n");
-
-
-  busySleep(3000);
-  printf("calling SDL_Quit\n");
   SDL_Quit();
   return 0;
 }
+
+
+#ifndef __EMSCRIPTEN__
+
+
+#define SDL_MAIN_USE_CALLBACKS 1  // Tell SDL3 to use the callback system
+#include <SDL3/SDL.h>
+//#include <SDL3/SDL_main.h>
+
+// Your custom application state structure
+typedef struct {
+    SDL_Window *window;
+    SDL_Renderer *renderer;
+} AppState;
+
+// 1. Called once when the app starts (Setup)
+SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[]) {
+    if (!SDL_Init(SDL_INIT_VIDEO)) {
+        return SDL_APP_FAILURE;
+    }
+
+    AppState *state = SDL_calloc(1, sizeof(AppState));
+    if (!state) {
+        return SDL_APP_FAILURE;
+    }
+    *appstate = state;
+
+    if (!SDL_CreateWindowAndRenderer("SDL3 Frame Loop", 640, 480, 0, &state->window, &state->renderer)) {
+        return SDL_APP_FAILURE;
+    }
+
+    return SDL_APP_CONTINUE; // Continue running the loop
+}
+
+// 2. Called every frame (The Main Loop / RequestAnimationFrame equivalent)
+SDL_AppResult SDL_AppIterate(void *appstate) {
+    AppState *state = (AppState *)appstate;
+
+    // Render logic goes here
+    SDL_SetRenderDrawColor(state->renderer, 0, 0, 0, 255);
+    SDL_RenderClear(state->renderer);
+    
+    // Draw things...
+
+    SDL_RenderPresent(state->renderer);
+
+    return SDL_APP_CONTINUE; // Keep looping. Return SDL_APP_SUCCESS to quit normally.
+}
+
+// 3. Called every time an event occurs
+SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event) {
+    if (event->type == SDL_EVENT_QUIT) {
+        return SDL_APP_SUCCESS; // Signal SDL to quit cleanly
+    }
+    return SDL_APP_CONTINUE;
+}
+
+// 4. Called once when exiting (Cleanup)
+void SDL_AppQuit(void *appstate, SDL_AppResult result) {
+    if (appstate) {
+        AppState *state = (AppState *)appstate;
+        SDL_DestroyRenderer(state->renderer);
+        SDL_DestroyWindow(state->window);
+        SDL_free(state);
+    }
+    SDL_Quit();
+}
+
+
 #endif

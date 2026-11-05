@@ -11,6 +11,10 @@ clang sdlTest.c -IC:\SDL3\include -LC:\sdl3\lib\x64 -lSDL3.lib -o sdlTest.exe
 rem emcc sdlTest.c --use-port=sdl3 -o sdlTest.html
 emcc sdlTest.c -o sdlTest.html
 
+rem sdlGameLoop
+clang sdlGameLoop.c -IC:\SDL3\include -LC:\sdl3\lib\x64 -lSDL3.lib -Xlinker /SUBSYSTEM:WINDOWS -o sdlGameLoop.exe
+rem emcc sdlGameLoop.c -o sdlGameLoop.html
+
 goto skip2
 rem files
 clang files.cpp -o files.exe

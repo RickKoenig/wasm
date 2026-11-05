@@ -2903,6 +2903,34 @@ var _proc_exit = (code) => {
         return null;
       },
   };
+  var _SDL_FillRect = (surf, rect, color) => {
+      var surfData = SDL.surfaces[surf];
+      assert(!surfData.locked); // but we could unlock and re-lock if we must..
+  
+      if (surfData.isFlagSet(2097152)) {
+        // in SDL_HWPALETTE color is index (0..255)
+        // so we should translate 1 byte value to
+        // 32 bit canvas
+        color = surfData.colors32[color];
+      }
+  
+      var r = rect ? SDL.loadRect(rect) : { x: 0, y: 0, w: surfData.width, h: surfData.height };
+  
+      if (surfData.clipRect) {
+        r = SDL.intersectionOfRects(surfData.clipRect, r);
+  
+        if (rect) {
+          SDL.updateRect(rect, r);
+        }
+      }
+  
+      surfData.ctx.save();
+      surfData.ctx.fillStyle = SDL.translateColorToCSSRGBA(color);
+      surfData.ctx.fillRect(r.x, r.y, r.w, r.h);
+      surfData.ctx.restore();
+      return 0;
+    };
+
   var _SDL_Flip = (surf) => {
       // We actually do this in Unlock, since the screen surface has as its canvas
       // backing the page canvas element
@@ -2958,12 +2986,6 @@ var _proc_exit = (code) => {
       SDL.checkPixelFormat(fmt);
       // We assume the machine is little-endian.
       return r&0xff|(g&0xff)<<8|(b&0xff)<<16|0xff000000;
-    };
-
-  var _SDL_MapRGBA = (fmt, r, g, b, a) => {
-      SDL.checkPixelFormat(fmt);
-      // We assume the machine is little-endian.
-      return r&0xff|(g&0xff)<<8|(b&0xff)<<16|(a&0xff)<<24;
     };
 
   var _SDL_AudioQuit = () => {
@@ -4142,6 +4164,8 @@ function assignWasmExports(wasmExports) {
 
 var wasmImports = {
   /** @export */
+  SDL_FillRect: _SDL_FillRect,
+  /** @export */
   SDL_Flip: _SDL_Flip,
   /** @export */
   SDL_Init: _SDL_Init,
@@ -4149,8 +4173,6 @@ var wasmImports = {
   SDL_LockSurface: _SDL_LockSurface,
   /** @export */
   SDL_MapRGB: _SDL_MapRGB,
-  /** @export */
-  SDL_MapRGBA: _SDL_MapRGBA,
   /** @export */
   SDL_Quit: _SDL_Quit,
   /** @export */
