@@ -29,6 +29,20 @@
         {
             "type": "chrome",
             "request": "launch",
+            "name": "Launch Chrome against localhost, SDL Game Loop",
+            "url": "http://localhost:88/webasm/emscripten/sdlGameLoop.html",
+            "webRoot": "${workspaceFolder}"
+        },
+        {
+            "type": "chrome",
+            "request": "launch",
+            "name": "Launch Chrome against localhost, SDL Game Loop 2",
+            "url": "http://localhost:88/webasm/emscripten/sdlGameLoop2.html",
+            "webRoot": "${workspaceFolder}"
+        },
+        {
+            "type": "chrome",
+            "request": "launch",
             "name": "Launch Chrome against localhost, FILE",
             "url": "http://localhost:88/webasm/emscripten/files.html",
             "webRoot": "${workspaceFolder}"

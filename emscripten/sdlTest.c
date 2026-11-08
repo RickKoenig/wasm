@@ -1,11 +1,13 @@
 #include <stdio.h>
 #include <time.h>
 
+//#undef __EMSCRIPTEN__
 #ifdef __EMSCRIPTEN__
 #include <SDL/SDL.h>
 #include <emscripten.h>
 #include <emscripten/html5.h>
 #else
+#include <math.h>
 #include <SDL3/SDL.h>
 #endif
 
@@ -86,11 +88,6 @@ bool one_iter(double time, void* userData) {
   int ry = 96 * sin(rad);
   for (int j = 0; j < 128; j++) {
     for (int i = 0; i < 256; i++) {
-/*#ifdef __EMSCRIPTEN__
-      *((Uint32*)surface->pixels + j * 256 + i) = SDL_MapRGB(fmtDetails, i, j, 0);
-#else
-      *((Uint32*)surface->pixels + j * 256 + i) = SDL_MapRGB(fmtDetails, NULL, i, j, 0);
-#endif*/
       *((Uint32*)surface->pixels + j * 256 + i) = mapRGB(fmtDetails, i, j, 0);
     }
   }
@@ -138,7 +135,7 @@ int main(int argc, char** argv) {
   //SDL_GetVersion(&linked);      // Get current running version (Function)
   //printf("SDL version linked = %d.%d\n", linked.major, linked.minor);
 #else
-  printf("SDL version compiled = %d.%d\n", SDL_MAJOR_VERSION, SDL_MINOR_VERSION);
+  printf("SDL version compiled = %d.%d.%d\n", SDL_MAJOR_VERSION, SDL_MINOR_VERSION, SDL_MICRO_VERSION);
 #endif
 
 // init video
@@ -176,73 +173,3 @@ int main(int argc, char** argv) {
   SDL_Quit();
   return 0;
 }
-
-
-#ifndef __EMSCRIPTEN__
-
-
-#define SDL_MAIN_USE_CALLBACKS 1  // Tell SDL3 to use the callback system
-#include <SDL3/SDL.h>
-//#include <SDL3/SDL_main.h>
-
-// Your custom application state structure
-typedef struct {
-    SDL_Window *window;
-    SDL_Renderer *renderer;
-} AppState;
-
-// 1. Called once when the app starts (Setup)
-SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[]) {
-    if (!SDL_Init(SDL_INIT_VIDEO)) {
-        return SDL_APP_FAILURE;
-    }
-
-    AppState *state = SDL_calloc(1, sizeof(AppState));
-    if (!state) {
-        return SDL_APP_FAILURE;
-    }
-    *appstate = state;
-
-    if (!SDL_CreateWindowAndRenderer("SDL3 Frame Loop", 640, 480, 0, &state->window, &state->renderer)) {
-        return SDL_APP_FAILURE;
-    }
-
-    return SDL_APP_CONTINUE; // Continue running the loop
-}
-
-// 2. Called every frame (The Main Loop / RequestAnimationFrame equivalent)
-SDL_AppResult SDL_AppIterate(void *appstate) {
-    AppState *state = (AppState *)appstate;
-
-    // Render logic goes here
-    SDL_SetRenderDrawColor(state->renderer, 0, 0, 0, 255);
-    SDL_RenderClear(state->renderer);
-    
-    // Draw things...
-
-    SDL_RenderPresent(state->renderer);
-
-    return SDL_APP_CONTINUE; // Keep looping. Return SDL_APP_SUCCESS to quit normally.
-}
-
-// 3. Called every time an event occurs
-SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event) {
-    if (event->type == SDL_EVENT_QUIT) {
-        return SDL_APP_SUCCESS; // Signal SDL to quit cleanly
-    }
-    return SDL_APP_CONTINUE;
-}
-
-// 4. Called once when exiting (Cleanup)
-void SDL_AppQuit(void *appstate, SDL_AppResult result) {
-    if (appstate) {
-        AppState *state = (AppState *)appstate;
-        SDL_DestroyRenderer(state->renderer);
-        SDL_DestroyWindow(state->window);
-        SDL_free(state);
-    }
-    SDL_Quit();
-}
-
-
-#endif
