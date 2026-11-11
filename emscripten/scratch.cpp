@@ -1,3 +1,7 @@
+#ifndef _CRT_SECURE_NO_WARNINGS
+#define _CRT_SECURE_NO_WARNINGS
+#endif
+
 #include <iostream>
 #include <cmath>
 //#include <numbers> // C++20 for std::numbers::pi
@@ -8,6 +12,21 @@ double deg2rad(double deg) {
     return deg * std::numbers::pi / 180.0;
 }
 */
+
+void readFile(const char* fname) {
+    FILE *file = fopen(fname, "rb");
+    printf("filename = '%s'\n", fname);
+    if (!file) {
+        printf("cannot open file\n");
+    }
+    while (!feof(file)) {
+        char c = fgetc(file);
+        if (c != EOF) {
+        putchar(c);
+        }
+    }
+    fclose(file);
+}
 
 int main() {
     std::cout << "Hello, World! scratch C++\n";
@@ -21,5 +40,7 @@ int main() {
         std::cout << "deg = " << deg << ", sin = " << s << std::endl;
     }
     delete[] table;
+    readFile("fileData/hello_world_file2.txt");
+    readFile("fileData/hello_world_file.txt");
     return 0;
 }

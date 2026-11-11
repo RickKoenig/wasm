@@ -4,19 +4,25 @@
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
-
         {
             "type": "chrome",
             "request": "launch",
-            "name": "Launch Chrome against localhost, main enscripten",
-            "url": "http://localhost:88/webasm/emscripten/hello.html",
+            "name": "Launch Chrome against localhost, simple, generate HTML, JS",
+            "url": "http://localhost:88/webasm/emscripten/simple.html",
             "webRoot": "${workspaceFolder}"
         },
         {
             "type": "chrome",
             "request": "launch",
-            "name": "Launch Chrome against localhost, main enscripten minimal",
-            "url": "http://localhost:88/webasm/emscripten/hello2.html",
+            "name": "Launch Chrome against localhost, scratch, files, C++",
+            "url": "http://localhost:88/webasm/emscripten/scratch.html",
+            "webRoot": "${workspaceFolder}"
+        },
+        {
+            "type": "chrome",
+            "request": "launch",
+            "name": "Launch Chrome against localhost, dist2test, custom HTML",
+            "url": "http://localhost:88/webasm/emscripten/dist2test.html",
             "webRoot": "${workspaceFolder}"
         },
         {
@@ -24,27 +30,6 @@
             "request": "launch",
             "name": "Launch Chrome against localhost, SDL",
             "url": "http://localhost:88/webasm/emscripten/sdlTest.html",
-            "webRoot": "${workspaceFolder}"
-        },
-        {
-            "type": "chrome",
-            "request": "launch",
-            "name": "Launch Chrome against localhost, SDL Game Loop",
-            "url": "http://localhost:88/webasm/emscripten/sdlGameLoop.html",
-            "webRoot": "${workspaceFolder}"
-        },
-        {
-            "type": "chrome",
-            "request": "launch",
-            "name": "Launch Chrome against localhost, SDL Game Loop 2",
-            "url": "http://localhost:88/webasm/emscripten/sdlGameLoop2.html",
-            "webRoot": "${workspaceFolder}"
-        },
-        {
-            "type": "chrome",
-            "request": "launch",
-            "name": "Launch Chrome against localhost, FILE",
-            "url": "http://localhost:88/webasm/emscripten/files.html",
             "webRoot": "${workspaceFolder}"
         },
     ]

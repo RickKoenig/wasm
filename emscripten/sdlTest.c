@@ -1,175 +1,154 @@
 #include <stdio.h>
-#include <time.h>
-
-//#undef __EMSCRIPTEN__
-#ifdef __EMSCRIPTEN__
-#include <SDL/SDL.h>
-#include <emscripten.h>
-#include <emscripten/html5.h>
-#else
 #include <math.h>
+
+#define SDL_MAIN_USE_CALLBACKS
 #include <SDL3/SDL.h>
-#endif
+#include <SDL3/SDL_main.h>
 
-//#define ANIMATE
-#ifndef M_PI
-#define M_PI 3.14159265358979323846
-#endif
+// sdl objects
+SDL_Window* window = NULL;
+SDL_Renderer* renderer = NULL;
+const SDL_PixelFormatDetails* fmtDetails = NULL;
+SDL_Texture* texture = NULL;
+void* pixels = NULL;
+int pitch = 0;
 
-// object state
+// user object state
 static int deg;
 static int scan;
+const static int winWidth = 256;
+const static int winHeight = 256;
+int counter = 0;
 
-// surface and misc
-static SDL_Surface *surface;
-#ifndef __EMSCRIPTEN__  // NATIVE
-SDL_Window* window;
-long busySecs = 5; // how long to busy wait on this window, showing graphics, then exit // MINIMAL
-
-void busySleep(long ms) {
-    clock_t start = clock();
-    clock_t end = clock() + ms * 1000 / CLOCKS_PER_SEC;
-    while(true) {
-      start = clock();
-      if (start >= end)
-        break;
-    }
-}
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
 #endif
 
 double deg2rad(double deg) {
     return deg * M_PI / 180.0;
 }
 
-void rect(int x, int y, int sx, int sy, Uint32 color) {
+void rect(Uint32* pixels, int x, int y, int sx, int sy, Uint32 color) {
   // center
   x -= sx / 2;
   y -= sy / 2;
   for (int oy = y; oy < y + sy; ++oy) {
+    Uint32* row = (Uint32*)((Uint8*)pixels + oy * pitch);
     for (int ox = x; ox < x + sx; ++ox) {
-      *((Uint32*)surface->pixels + oy * 256 + ox) = color;
+        row[ox] = color;
     }
   }
 }
 
-// unified mapRGB between SDL versions 1 and 3
-#ifdef __EMSCRIPTEN__
-Uint32 mapRGB(const SDL_PixelFormat* fmtDetails, Uint8 r, Uint8 g, Uint8 b) {
- Uint32 color = SDL_MapRGB(fmtDetails, r, g, b);
- return color;
+SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[]) {
+    printf("sdlTest2 init\n");
+    printf("SDL version compiled = %d.%d.%d\n", SDL_MAJOR_VERSION, SDL_MINOR_VERSION, SDL_MICRO_VERSION);
+    printf("sizeof void* = %zu\n", sizeof (void *));
+    if (!SDL_Init(SDL_INIT_VIDEO)) {
+        SDL_Log("SDL_Init failed: %s", SDL_GetError());
+        return SDL_APP_FAILURE;
+    }
+
+    SDL_SetHint(SDL_HINT_MAIN_CALLBACK_RATE, "60");
+    SDL_SetHint(SDL_HINT_RENDER_VSYNC, "1");
+    fmtDetails = SDL_GetPixelFormatDetails(SDL_PIXELFORMAT_RGBA8888);
+    if (!SDL_CreateWindowAndRenderer("sdltest 2", winWidth, winHeight, 0, &window, &renderer)) {
+        SDL_Log("Window/Renderer creation failed: %s", SDL_GetError());
+        SDL_Quit();
+        return SDL_APP_FAILURE;
+    }
+
+    SDL_SetRenderVSync(renderer, 1);
+
+    texture = SDL_CreateTexture(
+        renderer,
+        SDL_PIXELFORMAT_RGBA8888,
+        SDL_TEXTUREACCESS_STREAMING,
+        winWidth,
+        winHeight
+    );
+
+    SDL_AppResult ar = SDL_APP_CONTINUE;
+    return ar;
 }
-#else
-Uint32 mapRGB(const SDL_PixelFormatDetails* fmtDetails, Uint8 r, Uint8 g, Uint8 b) {
-  Uint32 color = SDL_MapRGB(fmtDetails, NULL, r, g, b);
-  return color;
-}
-#endif
 
 // draw one frame
-bool one_iter(double time, void* userData) {
-  //printf("in one iter deg = %d\n", deg);
+SDL_AppResult SDL_AppIterate(void *appstate) {
+    // clear surface
+    //SDL_SetRenderDrawColor(renderer, 255, 255, 0, 255);
+    //SDL_RenderClear(renderer);
 
-// clear surface
-#ifdef __EMSCRIPTEN__
-  const SDL_PixelFormat* fmtDetails = surface->format;
-  Uint32 clearColor = SDL_MapRGB(fmtDetails, 255, 255, 0);
-  SDL_FillRect(surface, NULL, clearColor);
-#else
-  // Get the surface's pixel format details
-  const SDL_PixelFormatDetails* fmtDetails = SDL_GetPixelFormatDetails(surface->format);
-  int clearColor = SDL_MapRGB(fmtDetails, NULL, 255, 255, 0);
-  SDL_FillSurfaceRect(surface, NULL, clearColor);
-#endif
+    // lock surface and draw color gradient pixels
+    if (SDL_LockTexture(texture, NULL, &pixels, &pitch)) {
+        // draw a color gradient
+        Uint32* target_pixels = (Uint32*)pixels;
+        for (int y = 0; y < winHeight; y++) {
+            Uint32* row = (Uint32*)((Uint8*)pixels + y * pitch);
+            for (int x = 0; x < winWidth; x++) {
+                // RGBA8888 format: red, green, blue, alpha, TODO: check
+                row[x] = SDL_MapRGB(fmtDetails, NULL, x, y, 0);
+            }
+        }
 
-// lock surface and draw color gradient pixels
-  if (SDL_MUSTLOCK(surface)) SDL_LockSurface(surface);
-  float rad = deg2rad(deg);
-  int rx = 96 * cos(rad);
-  int ry = 96 * sin(rad);
-  for (int j = 0; j < 128; j++) {
-    for (int i = 0; i < 256; i++) {
-      *((Uint32*)surface->pixels + j * 256 + i) = mapRGB(fmtDetails, i, j, 0);
+        // draw simple objects with cpu on locked surface
+        float rad = deg2rad(deg);
+        int rx = 3 * winWidth * cos(rad) / 8;
+        int ry = 3 * winHeight * sin(rad) / 8;
+        rect(pixels, winWidth / 2 + rx, winWidth / 2 + ry,   20, 20, SDL_MapRGB(fmtDetails, NULL, 255, 0, 0)); // circle
+        rect(pixels, winWidth / 2 + rx, 10,   20, 20, SDL_MapRGB(fmtDetails, NULL, 0, 255, 0)); // horz 
+        rect(pixels, 10, winHeight / 2 + ry,   20, 20, SDL_MapRGB(fmtDetails, NULL, 0, 0, 255)); // vert
+        rect(pixels, scan, 64,   20, 20, SDL_MapRGB(fmtDetails, NULL, 255, 255, 255)); // fps scan
+
+        SDL_UnlockTexture(texture);
+        SDL_RenderTexture(renderer, texture, NULL, NULL);
+    }  
+
+    SDL_FRect rect = {
+        .x = 10,  // Top-left X coordinate
+        .y = 10,  // Top-left Y coordinate
+        .w = 40,  // Width
+        .h = 20   // Height
+    };
+
+    SDL_SetRenderDrawColor(renderer, 255, 180, 255, SDL_ALPHA_OPAQUE);
+    SDL_RenderFillRect(renderer, &rect);
+
+    SDL_SetRenderDrawColor(renderer, 255, 255, 0, SDL_ALPHA_OPAQUE);
+    SDL_RenderRect(renderer, &rect);
+
+    SDL_RenderPresent(renderer);
+
+    // update objects state
+    deg += 6; // 6 * 60 = 360, try for 60 FPS, one revolution per second
+    if (deg >= 360) {
+        deg -= 360;
     }
-  }
-
-// draw simple objects
-  rect(128 + rx, 128 + ry,   20, 20, mapRGB(fmtDetails, 255, 0, 0)); // circle
-  rect(128 + rx, 10,   20, 20, mapRGB(fmtDetails, 0, 255, 0)); // horz 
-  rect(10, 128 + ry,   20, 20, mapRGB(fmtDetails, 0, 0, 255)); // vert
-  rect(scan, 64,   20, 20, mapRGB(fmtDetails, 255, 255, 255)); // fps scan
-
-// unlock and flip surface
-  if (SDL_MUSTLOCK(surface)) SDL_UnlockSurface(surface);
-#ifdef __EMSCRIPTEN__
-  SDL_Flip(surface);
-#else
-  SDL_UpdateWindowSurface(window);
-#endif
-
-// update objects state
-  deg += 6; // 6 * 60 = 360, try for 60 FPS, one revolution per second
-  if (deg >= 360) {
-    deg -= 360;
-  }
-  ++scan;
-  if (scan >= 256) {
-    scan -= 256;
-  }
-  return true;
+    scan += 4;
+    if (scan >= winWidth) {
+        scan -= winWidth;
+    }
+    if (!(counter % 60)) printf("count = %d\n", counter / 60);
+    ++counter;
+    SDL_AppResult ar = SDL_APP_CONTINUE;
+    return ar;
 }
 
-int main(int argc, char** argv) {
-// intro
-#ifdef __EMSCRIPTEN__
-  printf("Hello, world! EMSCRIPTEN\n");
-#else
-  printf("Hello, world! NATIVE\n");
-#endif
+SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event) {
+    if (event->type == SDL_EVENT_QUIT) {
+        return SDL_APP_SUCCESS;
+    } else if (event->type == SDL_EVENT_KEY_DOWN) {
+        if (event->key.key == SDLK_ESCAPE) {
+            return SDL_APP_SUCCESS;
+        }
+        if (event->key.key == 'q') { // quit
+            return SDL_APP_SUCCESS;
+        }
+    }
+    return SDL_APP_CONTINUE;
+}
 
-// version
-#ifdef __EMSCRIPTEN__
-  SDL_version compiled;
-  SDL_VERSION(&compiled);       // Get version compiled against (Macro)
-  printf("SDL version compiled = %d.%d\n", compiled.major, compiled.minor);
-  //SDL_version linked;
-  //SDL_GetVersion(&linked);      // Get current running version (Function)
-  //printf("SDL version linked = %d.%d\n", linked.major, linked.minor);
-#else
-  printf("SDL version compiled = %d.%d.%d\n", SDL_MAJOR_VERSION, SDL_MINOR_VERSION, SDL_MICRO_VERSION);
-#endif
-
-// init video
-#ifdef __EMSCRIPTEN__
-  SDL_Init(SDL_INIT_VIDEO);
-  surface = SDL_SetVideoMode(256, 256, 32, SDL_SWSURFACE);
-#else
-  bool result = SDL_Init(SDL_INIT_VIDEO);
-  printf("SDL result value init video %d\n", result);
-  window = SDL_CreateWindow("SDL test 2D", 256, 256, 0);
-  surface = SDL_GetWindowSurface(window);
-#endif
-
-// draw
-#ifdef __EMSCRIPTEN__
-#ifdef ANIMATE
-  emscripten_request_animation_frame_loop(&one_iter, 0);
-#else
-  one_iter(0, NULL);
-#endif
-#else
-#ifdef NO //ANIMATE
-  emscripten_request_animation_frame_loop(&one_iter, 0);
-#else
-  one_iter(0, NULL);
-#endif
-#endif
-
-// exit
-#ifndef __EMSCRIPTEN__
-  busySleep(busySecs * 1000); // ms/sec
-#endif
-  printf("you should see a smoothly-colored square - no sharp lines but the square borders!\n");
-  printf("and here is some text that should be HTML-friendly: amp: |&| double-quote: |\"| quote: |'| less-than, greater-than, html-like tags: |<cheez></cheez>|\nanother line.\n");
-  SDL_Quit();
-  return 0;
+void SDL_AppQuit(void *appstate, SDL_AppResult result) {
+    SDL_DestroyRenderer(renderer);
+    SDL_DestroyWindow(window);
+    SDL_Quit();
 }

@@ -1,32 +1,30 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
 
-int* generateArray(int size) {
-  int * arr = (int *) malloc(sizeof(int) * 20);
-  for(int i = 0; i < 20; i++) {
-    arr[i] = i;
-  }
-  return arr;
-}
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
 
-int addArray(int* arr, int size) {
-  int sum = 0;
-  for (int i = 0; i < size; ++i) {
-    sum += i;
-  }
-  return sum;
-}
-
+// test malloc, free and trig math
 int main() {
-  int size = 20;
-  int * arr = generateArray(size);
-  printf("arr pointer = %p\n", arr);
-  int sum = addArray(arr, size);
-  printf("The array sum is: %d\n", sum);
-  printf("The first value is: %d\n", *arr);
-  printf("The second value is: %d\n", *(arr + 1));
-  printf("The third value is: %d\n", *(arr + 2));
-  printf("The fourth value is: %d\n", *(arr + 3));
-  free(arr);
+#ifdef __EMSCRIPTEN__
+  printf("SIMPLE from emscripten\n");
+#else
+  printf("SIMPLE from NATIVE\n");
+#endif
+  float* table = malloc(91 * sizeof(float));
+  printf("sizeof void* = %zu\n", sizeof(void*));
+  for (int i = 0; i <= 90; ++i) {
+      const float rad = (float)i * M_PI / 180;
+      const float s = sin(rad);
+      table[i] = s;
+  }
+  for (int i = 0; i <= 90; i += 5) {
+      const float s = table[i];
+      printf("deg = %d, sine = %f\n", i, s);
+  }
+  free(table);
   printf("done!\n");
+  return 0;
 }
