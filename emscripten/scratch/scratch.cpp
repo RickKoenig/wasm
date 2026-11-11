@@ -14,7 +14,10 @@ double deg2rad(double deg) {
 */
 
 void readFile(const char* fname) {
-    FILE *file = fopen(fname, "rb");
+    // add path to fileData
+    std::string newFname = "../fileData/";
+    newFname += fname;
+    FILE *file = fopen(newFname.c_str(), "rb");
     printf("filename = '%s'\n", fname);
     if (!file) {
         printf("cannot open file\n");
@@ -40,7 +43,7 @@ int main() {
         std::cout << "deg = " << deg << ", sin = " << s << std::endl;
     }
     delete[] table;
-    readFile("fileData/hello_world_file2.txt");
-    readFile("fileData/hello_world_file.txt");
+    readFile("hello_world_file2.txt");
+    readFile("hello_world_file.txt");
     return 0;
 }

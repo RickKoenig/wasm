@@ -20,14 +20,6 @@ const static int winWidth = 256;
 const static int winHeight = 256;
 int counter = 0;
 
-#ifndef M_PI
-#define M_PI 3.14159265358979323846
-#endif
-
-double deg2rad(double deg) {
-    return deg * M_PI / 180.0;
-}
-
 void rect(Uint32* pixels, int x, int y, int sx, int sy, Uint32 color) {
   // center
   x -= sx / 2;
@@ -38,6 +30,14 @@ void rect(Uint32* pixels, int x, int y, int sx, int sy, Uint32 color) {
         row[ox] = color;
     }
   }
+}
+
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
+
+double deg2rad(double deg) {
+    return deg * M_PI / 180.0;
 }
 
 SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[]) {
