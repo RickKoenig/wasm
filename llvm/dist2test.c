@@ -9,3 +9,4 @@ int main()
 	printf("dist2 = %f\n",d2);
 	return 0;
 }
+//hi
