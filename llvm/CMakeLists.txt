@@ -11,6 +11,15 @@ project(MyProject LANGUAGES C)
 # 4. Define the executable target and its source files
 add_executable(dist2test dist2test.c dist2.c)
 
+message(STATUS "This is a clean notice.")
+
+if(WIN32)
+    message(STATUS "This is WIN32 path")
+else()
+    message(STATUS "This is not WIN32 path")
+endif()
+
+
 message(STATUS "C Compiler: ${CMAKE_C_COMPILER} (${CMAKE_C_COMPILER_ID} ${CMAKE_C_COMPILER_VERSION})")
 message(STATUS "C++ Compiler: ${CMAKE_CXX_COMPILER} (${CMAKE_CXX_COMPILER_ID} ${CMAKE_CXX_COMPILER_VERSION})")
 

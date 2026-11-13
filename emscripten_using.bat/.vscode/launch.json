@@ -1,0 +1,36 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "chrome",
+            "request": "launch",
+            "name": "Launch Chrome against localhost, simple, generate HTML, JS",
+            "url": "http://localhost:88/webasm/emscripten/simple/simple.html",
+            "webRoot": "${workspaceFolder}"
+        },
+        {
+            "type": "chrome",
+            "request": "launch",
+            "name": "Launch Chrome against localhost, scratch, files, C++",
+            "url": "http://localhost:88/webasm/emscripten/scratch/scratch.html",
+            "webRoot": "${workspaceFolder}"
+        },
+        {
+            "type": "chrome",
+            "request": "launch",
+            "name": "Launch Chrome against localhost, dist2test, custom HTML",
+            "url": "http://localhost:88/webasm/emscripten/dist2test/dist2test.html",
+            "webRoot": "${workspaceFolder}"
+        },
+        {
+            "type": "chrome",
+            "request": "launch",
+            "name": "Launch Chrome against localhost, SDL",
+            "url": "http://localhost:88/webasm/emscripten/sdlTest/sdlTest.html",
+            "webRoot": "${workspaceFolder}"
+        },
+    ]
+}
