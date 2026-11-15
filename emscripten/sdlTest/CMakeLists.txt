@@ -1,10 +1,13 @@
 cmake_minimum_required(VERSION 3.20)
-project(sdlTest LANGUAGES C)
+project(sdlTest LANGUAGES CXX C)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-add_executable(sdlTest sdlTest.c)
+# add_executable(sdlTest sdlTest.cpp deg2rad.cpp rect.c)
+
+file(GLOB SOURCES CONFIGURE_DEPENDS "*.cpp" "*.c")
+add_executable(sdlTest ${SOURCES})
 
 if(EMSCRIPTEN)
     # Generate an .html wrapper alongside .js and .wasm

@@ -5,13 +5,14 @@
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_main.h>
 
+#include "deg2rad.h"
+#include "rect.h"
+
 // sdl objects
 SDL_Window* window = NULL;
 SDL_Renderer* renderer = NULL;
 const SDL_PixelFormatDetails* fmtDetails = NULL;
 SDL_Texture* texture = NULL;
-void* pixels = NULL;
-int pitch = 0;
 
 // user object state
 static int deg;
@@ -19,26 +20,6 @@ static int scan;
 const static int winWidth = 256;
 const static int winHeight = 256;
 int counter = 0;
-
-void rect(Uint32* pixels, int x, int y, int sx, int sy, Uint32 color) {
-  // center
-  x -= sx / 2;
-  y -= sy / 2;
-  for (int oy = y; oy < y + sy; ++oy) {
-    Uint32* row = (Uint32*)((Uint8*)pixels + oy * pitch);
-    for (int ox = x; ox < x + sx; ++ox) {
-        row[ox] = color;
-    }
-  }
-}
-
-#ifndef M_PI
-#define M_PI 3.14159265358979323846
-#endif
-
-double deg2rad(double deg) {
-    return deg * M_PI / 180.0;
-}
 
 SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[]) {
     printf("sdlTest2 init\n");
@@ -79,9 +60,11 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
     //SDL_RenderClear(renderer);
 
     // lock surface and draw color gradient pixels
-    if (SDL_LockTexture(texture, NULL, &pixels, &pitch)) {
+    Uint32* pixels = NULL;
+    int pitch = 0;
+    if (SDL_LockTexture(texture, NULL, (void**)&pixels, &pitch)) {
         // draw a color gradient
-        Uint32* target_pixels = (Uint32*)pixels;
+        Uint32* target_pixels = pixels;
         for (int y = 0; y < winHeight; y++) {
             Uint32* row = (Uint32*)((Uint8*)pixels + y * pitch);
             for (int x = 0; x < winWidth; x++) {
@@ -94,10 +77,10 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
         float rad = deg2rad(deg);
         int rx = 3 * winWidth * cos(rad) / 8;
         int ry = 3 * winHeight * sin(rad) / 8;
-        rect(pixels, winWidth / 2 + rx, winWidth / 2 + ry,   20, 20, SDL_MapRGB(fmtDetails, NULL, 255, 0, 0)); // circle
-        rect(pixels, winWidth / 2 + rx, 10,   20, 20, SDL_MapRGB(fmtDetails, NULL, 0, 255, 0)); // horz 
-        rect(pixels, 10, winHeight / 2 + ry,   20, 20, SDL_MapRGB(fmtDetails, NULL, 0, 0, 255)); // vert
-        rect(pixels, scan, 64,   20, 20, SDL_MapRGB(fmtDetails, NULL, 255, 255, 255)); // fps scan
+        rect(pixels, pitch, winWidth / 2 + rx, winWidth / 2 + ry,   20, 20, SDL_MapRGB(fmtDetails, NULL, 255, 0, 0)); // circle
+        rect(pixels, pitch, winWidth / 2 + rx, 10,   20, 20, SDL_MapRGB(fmtDetails, NULL, 0, 255, 0)); // horz 
+        rect(pixels, pitch, 10, winHeight / 2 + ry,   20, 20, SDL_MapRGB(fmtDetails, NULL, 0, 0, 255)); // vert
+        rect(pixels, pitch, scan, 64,   20, 20, SDL_MapRGB(fmtDetails, NULL, 255, 255, 255)); // fps scan
 
         SDL_UnlockTexture(texture);
         SDL_RenderTexture(renderer, texture, NULL, NULL);
