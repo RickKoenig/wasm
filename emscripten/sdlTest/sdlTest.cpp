@@ -8,6 +8,10 @@
 #include "deg2rad.h"
 #include "rect.h"
 
+#include <timesTwo.h>
+#include <timesThree.h>
+#include <timesFour.h>
+
 // sdl objects
 SDL_Window* window = NULL;
 SDL_Renderer* renderer = NULL;
@@ -25,6 +29,13 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[]) {
     printf("sdlTest2 init\n");
     printf("SDL version compiled = %d.%d.%d\n", SDL_MAJOR_VERSION, SDL_MINOR_VERSION, SDL_MICRO_VERSION);
     printf("sizeof void* = %zu\n", sizeof (void *));
+
+    float testA = 10;
+    float testA2 = timesTwo(testA);
+    float testA3 = timesThree(testA);
+    float testA4 = timesFour(testA);
+    printf("a = %f, a2 = %f, a3 = %f, a4 = %f\n", testA, testA2, testA3, testA4);
+    
     if (!SDL_Init(SDL_INIT_VIDEO)) {
         SDL_Log("SDL_Init failed: %s", SDL_GetError());
         return SDL_APP_FAILURE;

@@ -1,0 +1,1 @@
+float timesThree(float a);

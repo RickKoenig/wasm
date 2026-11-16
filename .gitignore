@@ -3,3 +3,5 @@
 *.wasm
 *.zip
 *.data
+build-web
+build-win

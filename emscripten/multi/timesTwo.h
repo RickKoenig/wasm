@@ -1,0 +1,1 @@
+float timesTwo(float a);
