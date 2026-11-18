@@ -24,7 +24,8 @@ if(EMSCRIPTEN)
         "-sUSE_SDL=3"
         # Optional: bundle assets into the virtual filesystem
         # "--preload-file" "${CMAKE_SOURCE_DIR}/assets@/assets"
-    )
+        "SHELL:--preload-file ${CMAKE_CURRENT_SOURCE_DIR}/fileData@fileData"
+    )    
 elseif(WIN32)
     # Native Windows libraries and settings
     #[[

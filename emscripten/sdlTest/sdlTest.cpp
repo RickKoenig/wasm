@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <math.h>
 
+#include <string>
+
 #define SDL_MAIN_USE_CALLBACKS
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_main.h>
@@ -25,10 +27,32 @@ const static int winWidth = 256;
 const static int winHeight = 256;
 int counter = 0;
 
+void readFile(const char* fname) {
+    // add path to fileData
+    std::string newFname = "../fileData/";
+    newFname += fname;
+    FILE *file = fopen(newFname.c_str(), "rb");
+    printf("filename = '%s'\n", fname);
+    if (!file) {
+        printf("cannot open file\n");
+        return;
+    }
+    while (!feof(file)) {
+        char c = fgetc(file);
+        if (c != EOF) {
+        putchar(c);
+        }
+    }
+    fclose(file);
+}
+
 SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[]) {
     printf("sdlTest2 init\n");
     printf("SDL version compiled = %d.%d.%d\n", SDL_MAJOR_VERSION, SDL_MINOR_VERSION, SDL_MICRO_VERSION);
     printf("sizeof void* = %zu\n", sizeof (void *));
+
+    readFile("hello_world_file2.txt");
+    readFile("hello_world_file.txt");
 
     float testA = 10;
     float testA2 = timesTwo(testA);
