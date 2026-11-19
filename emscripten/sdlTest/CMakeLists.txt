@@ -24,8 +24,18 @@ if(EMSCRIPTEN)
         "-sUSE_SDL=3"
         # Optional: bundle assets into the virtual filesystem
         # "--preload-file" "${CMAKE_SOURCE_DIR}/assets@/assets"
-        "SHELL:--preload-file ${CMAKE_CURRENT_SOURCE_DIR}/fileData@fileData"
-    )    
+        "SHELL:--preload-file ${CMAKE_SOURCE_DIR}/fileData@fileData"
+    )
+
+
+
+    # Gather all files in the assets folder
+    file(GLOB_RECURSE ASSET_FILES "${CMAKE_SOURCE_DIR}/fileData/*")
+
+    # Force CMake to re-run the linker if any asset file changes
+    set_target_properties(sdlTest PROPERTIES LINK_DEPENDS "${ASSET_FILES}")
+
+
 elseif(WIN32)
     # Native Windows libraries and settings
     #[[
@@ -54,7 +64,13 @@ elseif(WIN32)
     target_include_directories(sdlTest PRIVATE C:/SDL3/include)
     target_link_libraries(sdlTest PRIVATE C:/sdl3/lib/x86/sdl3.lib)
 endif()
-    target_include_directories(sdlTest PRIVATE ../multi)
+    
+target_include_directories(sdlTest PRIVATE ../multi)
+
+
+
+
+
 
 #[[
 

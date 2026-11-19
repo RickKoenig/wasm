@@ -29,7 +29,7 @@ int counter = 0;
 
 void readFile(const char* fname) {
     // add path to fileData
-    std::string newFname = "../fileData/";
+    std::string newFname = "fileData/";
     newFname += fname;
     FILE *file = fopen(newFname.c_str(), "rb");
     printf("filename = '%s'\n", fname);
@@ -37,12 +37,15 @@ void readFile(const char* fname) {
         printf("cannot open file\n");
         return;
     }
+    putchar('\'');
     while (!feof(file)) {
         char c = fgetc(file);
         if (c != EOF) {
         putchar(c);
         }
     }
+    putchar('\'');
+    putchar('\n');
     fclose(file);
 }
 
@@ -53,6 +56,7 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[]) {
 
     readFile("hello_world_file2.txt");
     readFile("hello_world_file.txt");
+    readFile("subdir/subber.txt");
 
     float testA = 10;
     float testA2 = timesTwo(testA);
