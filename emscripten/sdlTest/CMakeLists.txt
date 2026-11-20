@@ -18,8 +18,9 @@ if(EMSCRIPTEN)
     set_target_properties(sdlTest PROPERTIES SUFFIX ".html")
 
     # Pass Emscripten-specific flags
-    target_compile_options(sdlTest PRIVATE -O2)
+    target_compile_options(sdlTest PRIVATE -O2 "-lidbfs.js" "-sFORCE_FILESYSTEM=1")
     target_link_options(sdlTest PRIVATE
+        "-lidbfs.js" "-sFORCE_FILESYSTEM=1"
         "-sALLOW_MEMORY_GROWTH=1"
         "-sUSE_SDL=3"
         # Optional: bundle assets into the virtual filesystem
