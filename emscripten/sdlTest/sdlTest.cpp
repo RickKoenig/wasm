@@ -19,6 +19,9 @@
 #include <timesFour.h>
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
+#define PATH_SAVE "/saveData/"
+#else
+#define PATH_SAVE "saveData/"
 #endif
 
 // sdl objects
@@ -32,7 +35,11 @@ static int deg;
 static int scan;
 const static int winWidth = 256;
 const static int winHeight = 256;
-int counter = 0;
+int frameCounter = 0;
+
+// file system
+bool fs_ready = false;
+bool updated_counter = false;
 
 void readFile(const char* fname) {
     FILE *file = fopen(fname, "rb");
@@ -53,6 +60,7 @@ void readFile(const char* fname) {
     fclose(file);
 }
 
+/*
 void writeFile(const char* fname) {
     FILE *file = fopen(fname, "wb");
     printf("\nWRITE filename = '%s'\n", fname);
@@ -65,151 +73,62 @@ void writeFile(const char* fname) {
     fwrite(writeit, 1, strlen(writeit), file);
     fclose(file);
 }
+*/
 
 void countFile(const char* fname) {
     printf("\nCOUNT filename = '%s'\n", fname);
-    int count = 0;
+    int fCount = 0;
     
-    // 1. Read the existing counter (if the file exists)
+    // 1. Read the existing frameCounter (if the file exists)
     std::ifstream infile(fname);
     if (infile.is_open()) {
-        infile >> count;
-        std::cout << "read count at " << count << std::endl;
+        infile >> fCount;
+        std::cout << "read fCount at " << fCount << std::endl;
         infile.close();
     } else {
-        count = 47;
+        fCount = 47;
         std::cout << "Failed to open file for READ!" << std::endl;
     }
 
     // 2. Increment and display
-    ++count;
-    std::cout << "NEW counter value: " << count << std::endl;
+    ++fCount;
+    std::cout << "NEW frameCounter value: " << fCount << std::endl;
 
     // 3. Write the updated value back to the virtual filesystem
     std::ofstream outfile(fname);
     if (outfile.is_open()) {
-        outfile << count;
+        outfile << fCount;
         outfile.close();
     } else {
         std::cout << "Failed to open file for WRITE!" << std::endl;
     }
 }
 
-/*
-#include <emscripten.h>
-#include <cstdio>
-
-extern "C" void on_fs_ready() {
-    FILE* f = fopen("/persist/save.txt", "w");
-    if (f) {
-        fprintf(f, "Saved data!\n");
-        fclose(f);
-    }
-
-    // Flush changes from memory to IndexedDB
-    EM_ASM(
-        FS.syncfs(false, function (err) {
-            if (err) console.log("Sync failed:", err);
-            else console.log("Saved to IndexedDB!");
-        });
-    );
-}
-*/
-/*
-void prep() {
-    EM_ASM(
-        FS.mkdir('/persist');
-        FS.mount(IDBFS, {}, '/persist');
-
-        // Populate memory from IndexedDB before running file I/O
-        FS.syncfs(true, function (err) {
-            if (err) console.log("Load failed:", err);
-            ccall('on_fs_ready', 'v');
-        });
-    );
-}
-*/
-
-#ifdef __EMSCRIPTEN__
-
-// Exported C function called by JavaScript once IndexedDB has loaded into MEMFS
-extern "C" {
-    EMSCRIPTEN_KEEPALIVE
-    void run_counter() {
-        const char* filepath = "/fileSave/counter.txt";
-        int count = 0;
-
-        // 1. Read the existing counter (if the file exists)
-        std::ifstream infile(filepath);
-        if (infile.is_open()) {
-            infile >> count;
-            infile.close();
-        }
-
-        // 2. Increment and display
-        count++;
-        std::cout << "Current counter value: " << count << std::endl;
-
-        // 3. Write the updated value back to the virtual filesystem
-        std::ofstream outfile(filepath);
-        if (outfile.is_open()) {
-            outfile << count;
-            outfile.close();
-        } else {
-            std::cerr << "Failed to open file for writing!" << std::endl;
-            return;
-        }
-
-        // 4. Flush MEMFS changes back to IndexedDB (false = save to IndexedDB)
-        /*EM_ASM(
-            FS.syncfs(false, function (err) {
-                if (err) {
-                    console.log('Error saving to IDBFS:', err);
-                } else {
-                    console.log('Counter successfully persisted to IndexedDB.');
-                }
-            });
-        );*/
-    }
-}
-
-
-void mountSaveData() {
-    printf("in file mount\n");
-// Create the mount directory, mount IDBFS, and populate MEMFS from IndexedDB
-    EM_ASM(
-        FS.mkdir('/fileSave');
-        FS.mount(IDBFS, {autoPersist: true}, '/fileSave');
-
-        // true = load from IndexedDB into MEMFS
-        FS.syncfs(true, function (err) {
-            if (err) {
-                console.log('Error loading from IDBFS:', err);
-                return;
-            }
-            // Safe to read/write files now
-            Module._run_counter();
-        });
-    );
-}
-#endif
-
 SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[]) {
     printf("sdlTest2 init\n");
     printf("SDL version compiled = %d.%d.%d\n", SDL_MAJOR_VERSION, SDL_MINOR_VERSION, SDL_MICRO_VERSION);
     printf("sizeof void* = %zu\n", sizeof (void *));
-
+#ifdef __EMSCRIPTEN__
+// Mount IDBFS and flip fs_ready to true (1) once IndexedDB finishes syncing
+    EM_ASM({
+        FS.mkdir('/saveData');
+        FS.mount(IDBFS, {autoPersist: true}, '/saveData');
+        FS.syncfs(true, function(err) {
+            if (err) {
+                console.error('IDBFS load error:', err);
+            }
+            setValue($0, 1, 'i8');
+            console.log("fs ready!");
+        });
+    }, &fs_ready);
+#else
+    fs_ready = true;
+#endif
     readFile("fileData/hello_world_file2.txt");
     readFile("fileData/hello_world_file.txt");
     readFile("fileData/subdir/subber.txt");
 
-    //countFile("saveData/counter.txt");
 
-    //writeFile("saveData/writer.txt");
-    //readFile("saveData/writer.txt");
-#ifdef __EMSCRIPTEN__
-    mountSaveData();
-#endif
     float testA = 10;
     float testA2 = timesTwo(testA);
     float testA3 = timesThree(testA);
@@ -249,6 +168,14 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
     // clear surface
     //SDL_SetRenderDrawColor(renderer, 255, 255, 0, 255);
     //SDL_RenderClear(renderer);
+
+    if (!fs_ready) {
+        return SDL_APP_CONTINUE;
+    }
+    if (!updated_counter) {
+        countFile(PATH_SAVE"counter.txt");
+        updated_counter = true;
+    }
 
     // lock surface and draw color gradient pixels
     Uint32* pixels = NULL;
@@ -301,8 +228,11 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
     if (scan >= winWidth) {
         scan -= winWidth;
     }
-    //if (!(counter % 60)) printf("count = %d\n", counter / 60);
-    ++counter;
+    //if (frameCounter < 30) {
+    //if (!(frameCounter % 60)) {
+        //printf("count = %d, fs_ready = %d\n", frameCounter / 60, fs_ready);
+    //}
+    ++frameCounter;
     SDL_AppResult ar = SDL_APP_CONTINUE;
     return ar;
 }
