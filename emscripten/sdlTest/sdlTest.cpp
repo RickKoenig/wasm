@@ -11,18 +11,12 @@
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_main.h>
 
+#include "fileSystemInit.h"
+
 #include "deg2rad.h"
 #include "rect.h"
 
-#include <timesTwo.h>
-#include <timesThree.h>
-#include <timesFour.h>
-#ifdef __EMSCRIPTEN__
-#include <emscripten.h>
-#define PATH_SAVE "/saveData/"
-#else
-#define PATH_SAVE "saveData/"
-#endif
+#include <multi.h>
 
 // sdl objects
 SDL_Window* window = NULL;
@@ -86,7 +80,6 @@ void countFile(const char* fname) {
         std::cout << "read fCount at " << fCount << std::endl;
         infile.close();
     } else {
-        fCount = 47;
         std::cout << "Failed to open file for READ!" << std::endl;
     }
 
@@ -108,26 +101,10 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[]) {
     printf("sdlTest2 init\n");
     printf("SDL version compiled = %d.%d.%d\n", SDL_MAJOR_VERSION, SDL_MINOR_VERSION, SDL_MICRO_VERSION);
     printf("sizeof void* = %zu\n", sizeof (void *));
-#ifdef __EMSCRIPTEN__
-// Mount IDBFS and flip fs_ready to true (1) once IndexedDB finishes syncing
-    EM_ASM({
-        FS.mkdir('/saveData');
-        FS.mount(IDBFS, {autoPersist: true}, '/saveData');
-        FS.syncfs(true, function(err) {
-            if (err) {
-                console.error('IDBFS load error:', err);
-            }
-            setValue($0, 1, 'i8');
-            console.log("fs ready!");
-        });
-    }, &fs_ready);
-#else
-    fs_ready = true;
-#endif
+    fileSystemInit();
     readFile("fileData/hello_world_file2.txt");
     readFile("fileData/hello_world_file.txt");
     readFile("fileData/subdir/subber.txt");
-
 
     float testA = 10;
     float testA2 = timesTwo(testA);
@@ -169,7 +146,7 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
     //SDL_SetRenderDrawColor(renderer, 255, 255, 0, 255);
     //SDL_RenderClear(renderer);
 
-    if (!fs_ready) {
+    if (!fileSystemReady()) {
         return SDL_APP_CONTINUE;
     }
     if (!updated_counter) {

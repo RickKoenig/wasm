@@ -18,17 +18,14 @@ if(EMSCRIPTEN)
     set_target_properties(sdlTest PROPERTIES SUFFIX ".html")
 
     # Pass Emscripten-specific flags
-    target_compile_options(sdlTest PRIVATE -O2 "-lidbfs.js" "-sFORCE_FILESYSTEM=1")
+    target_compile_options(sdlTest PRIVATE -O2)
     target_link_options(sdlTest PRIVATE
         "-lidbfs.js" "-sFORCE_FILESYSTEM=1"
         "-sALLOW_MEMORY_GROWTH=1"
         "-sUSE_SDL=3"
         # Optional: bundle assets into the virtual filesystem
-        # "--preload-file" "${CMAKE_SOURCE_DIR}/assets@/assets"
         "SHELL:--preload-file ${CMAKE_SOURCE_DIR}/fileData@fileData"
     )
-
-
 
     # Gather all files in the assets folder
     file(GLOB_RECURSE ASSET_FILES "${CMAKE_SOURCE_DIR}/fileData/*")
@@ -36,20 +33,8 @@ if(EMSCRIPTEN)
     # Force CMake to re-run the linker if any asset file changes
     set_target_properties(sdlTest PROPERTIES LINK_DEPENDS "${ASSET_FILES}")
 
-
 elseif(WIN32)
     # Native Windows libraries and settings
-    #[[
-    # 1. Define the external library as an IMPORTED target
-    add_subdirectory(/nodejs/webasm/emscripten/multi /nodejs/webasm/emscripten/multi/build-win)
-    add_library(multi STATIC /nodejs/webasm/emscripten/multi.lib)
-    # 2. Point it to the actual file path on disk
-    #set_target_properties(multi PROPERTIES
-    #    IMPORTED_LOCATION "/nodejs/webasm/emscripten/multi/build-win/multi.lib"
-    #)
-    # 3. Link it to your executable
-    target_link_libraries(sdlTest PRIVATE multi)
-    ]]
 
     # add_executable(sdlTest sdlTest.cpp deg2rad.cpp rect.c)
     add_subdirectory(/nodejs/webasm/emscripten/multi /nodejs/webasm/emscripten/multi/build-win)

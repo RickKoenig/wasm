@@ -1,1 +1,0 @@
-float timesFour(float a);
