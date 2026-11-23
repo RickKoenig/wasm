@@ -4,21 +4,36 @@
   <meta charset="utf-8">
   <title>My Custom App</title>
   <style>
-    body { margin: 0; background: #111; display: flex; justify-content: center; align-items: center; height: 100vh; }
-    canvas { border: 10px solid #444; width: 256px; height: 256px;}
-  </style>
+    body { margin: 0; background: #139;  justify-content: center; align-items: center; height: 100vh; }
+    canvas { border: 10px dotted rgb(160, 213, 48); width: 256px; height: 256px; margin: 0 auto; display: block;}
+    textarea { height: 200px; width: 600px; background: #352879; color: #fff; border: none; border-top: 1px solid #333; padding: 8px; resize: both; font-family: monospace; margin: 0 auto; display: block;}  
+</style>
 </head>
 <body>
   <canvas id="canvas" oncontextmenu="event.preventDefault()" tabindex="-1"></canvas>
-
+  <br>
+  <textarea id="output" readonly></textarea>
   <script>
+    const outputElement = document.getElementById('output');
     var Module = {
       canvas: (function() {
         return document.getElementById('canvas');
       })(),
+
+
+// Captures stdout (printf, puts, std::cout)
       print: function(text) {
-        console.log("[C++ stdout]: " + text);
+        if (arguments.length > 1) text = Array.prototype.slice.call(arguments).join(' ');
+        console.log(text); // Keep logging to browser DevTools as well
+        if (outputElement) {
+          outputElement.value += text + "\n";
+          outputElement.scrollTop = outputElement.scrollHeight; // Auto-scroll to bottom
+        }
       },
+
+      /*print: function(text) {
+        console.log("[C++ stdout]: " + text);
+      },*/
       printErr: function(text) {
         console.error("[C++ stderr]: " + text);
       }

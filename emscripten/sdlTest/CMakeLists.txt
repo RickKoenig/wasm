@@ -25,7 +25,7 @@ if(EMSCRIPTEN)
         "-sUSE_SDL=3"
         # Optional: bundle assets into the virtual filesystem
         "SHELL:--preload-file ${CMAKE_SOURCE_DIR}/fileData@fileData"
-        # "SHELL:--shell-file ${CMAKE_SOURCE_DIR}/custom_shell.html"
+        "SHELL:--shell-file ${CMAKE_SOURCE_DIR}/custom_shell.html"
     )
 
     # Gather all files in the assets folder
@@ -33,7 +33,7 @@ if(EMSCRIPTEN)
 
     # Force CMake to re-run the linker if any asset file changes
     set_target_properties(sdlTest PROPERTIES LINK_DEPENDS "${ASSET_FILES}")
-    # set_target_properties(sdlTest PROPERTIES LINK_DEPENDS "${ASSET_FILES};${CMAKE_SOURCE_DIR}/custom_shell.html")
+    set_target_properties(sdlTest PROPERTIES LINK_DEPENDS "${ASSET_FILES};${CMAKE_SOURCE_DIR}/custom_shell.html")
 
 elseif(WIN32)
     # Native Windows libraries and settings
