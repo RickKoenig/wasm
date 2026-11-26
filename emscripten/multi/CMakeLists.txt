@@ -1,10 +1,7 @@
 cmake_minimum_required(VERSION 3.20)
 project(multi LANGUAGES CXX C)
 
-#add_library(multi STATIC timesTwo.cpp timesThree.cpp timesFour.cpp)
-
-file(GLOB SOURCES CONFIGURE_DEPENDS "*.cpp" "*.c")
-add_library(multi STATIC ${SOURCES})
+add_library(multi STATIC timesTwo.cpp timesThree.cpp timesFour.cpp)
 
 target_include_directories(multi
     PRIVATE
