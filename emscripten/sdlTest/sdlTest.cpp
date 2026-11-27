@@ -1,11 +1,11 @@
-#include <stdio.h>
-#include <math.h>
+//#include <stdio.h>
+//#include <math.h>
 
 #include <cstdio>
 #include <fstream>
 #include <iostream>
 
-#include <string>
+//#include <string>
 
 #define SDL_MAIN_USE_CALLBACKS
 #include <SDL3/SDL.h>
@@ -101,6 +101,11 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[]) {
     printf("sdlTest2 init\n");
     printf("SDL version compiled = %d.%d.%d\n", SDL_MAJOR_VERSION, SDL_MINOR_VERSION, SDL_MICRO_VERSION);
     printf("sizeof void* = %zu\n", sizeof (void *));
+#ifdef NDEBUG
+    printf("RELEASE MODE\n");
+#else
+    printf("DEBUG MODE\n");
+#endif
     fileSystemInit();
     readFile("fileData/hello_world_file2.txt");
     readFile("fileData/hello_world_file.txt");
@@ -206,9 +211,9 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
         scan -= winWidth;
     }
     //if (frameCounter < 30) {
-    //if (!(frameCounter % 60)) {
-        //printf("count = %d, fs_ready = %d\n", frameCounter / 60, fs_ready);
-    //}
+    if (!(frameCounter % 600)) {
+        printf("count = %d, fs_ready = %d\n", frameCounter , fs_ready);
+    }
     ++frameCounter;
     SDL_AppResult ar = SDL_APP_CONTINUE;
     return ar;

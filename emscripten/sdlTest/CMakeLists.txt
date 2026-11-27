@@ -13,7 +13,6 @@ if(EMSCRIPTEN)
         fileSystemInit.cpp
         deg2rad.cpp
     )
-    # target_link_libraries(sdlTest PRIVATE /nodejs/webasm/emscripten/multi/build-web/libmulti.a)
     target_link_libraries(sdlTest PRIVATE multi)
     set_target_properties(sdlTest PROPERTIES SUFFIX ".html")
     # Pass Emscripten-specific flags
@@ -22,6 +21,7 @@ if(EMSCRIPTEN)
         "-lidbfs.js" "-sFORCE_FILESYSTEM=1"
         "-sALLOW_MEMORY_GROWTH=1"
         "-sUSE_SDL=3"
+        "-O2"
         # Optional: bundle assets into the virtual filesystem
         "SHELL:--preload-file ${CMAKE_SOURCE_DIR}/fileData@fileData"
         "SHELL:--shell-file ${CMAKE_SOURCE_DIR}/custom_shell.html"
@@ -35,12 +35,18 @@ if(EMSCRIPTEN)
 elseif(WIN32)
     # Native Windows libraries and settings
     add_subdirectory(../multi ${CMAKE_BINARY_DIR}/multi)
-    add_executable(sdlTest 
+    add_executable(sdlTest
         sdlTest.cpp
         rect.c
         fileSystemInit.cpp
         deg2rad.cpp
     )
+    # Hide console window in Release mode only
+    
+    set_target_properties(sdlTest PROPERTIES
+        WIN32_EXECUTABLE "$<CONFIG:Release>"
+    )
+    
     target_compile_definitions(sdlTest PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX)
     target_include_directories(sdlTest PRIVATE C:/SDL3/include)
     target_include_directories(sdlTest PRIVATE ../multi)

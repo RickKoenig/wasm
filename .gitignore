@@ -5,5 +5,6 @@
 *.data
 build-web
 build-win
+build
 sdlTest_experimental
 sdlTest_back
